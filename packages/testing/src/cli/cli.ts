@@ -10,6 +10,7 @@ import { Args } from "./Args";
 import { Printer } from "./Printer";
 
 import OFFICIAL_SUITES from "./suites.json";
+import { importDynamically } from "../util";
 
 async function runSuite(): Promise<IResults> {
 	const commandOrTestSuiteModulePath = Args.parsePositional(0);
@@ -20,7 +21,7 @@ async function runSuite(): Promise<IResults> {
 	}
 
 	if (commandOrTestSuiteModulePath === "gen") {
-		await import("./cli.gen");
+		await importDynamically("./cli.gen");
 
 		return;
 	}
@@ -40,9 +41,10 @@ async function runSuite(): Promise<IResults> {
 	}
 
 	try {
-		const TestClass = Object.values(
-			(await import(testSuiteModuleReference)) as { [s: string]: unknown } | ArrayLike<unknown>
-		)[0] as { suiteTitle: string; suiteColor: TColor };
+		const TestClass = Object.values(await importDynamically(testSuiteModuleReference))[0] as {
+			suiteTitle: string;
+			suiteColor: TColor;
+		};
 		Printer.badge(
 			(TestClass.suiteTitle || "").replace(/( ?test(s)?)?$/i, " tests"),
 			TestClass.suiteColor ?? [225, 225, 225]

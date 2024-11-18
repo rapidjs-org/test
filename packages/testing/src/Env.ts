@@ -5,6 +5,7 @@ import { FormatError } from "./FormatError";
 import { Args } from "./cli/Args";
 
 import _config from "./config.json";
+import { importDynamically } from "./util";
 
 type TIndexedValue = { [key: string]: unknown };
 
@@ -25,16 +26,10 @@ export class Env {
 	public async call(identifier: string): Promise<void> {
 		if (Args.parseFlag("no-env")) return;
 
-		try {
-			this.api =
-				this.api ?? ((await import(resolvePath(this.rootDirPath, _config.envModuleFilename))) as IEnvApi);
-		} catch (err: unknown) {
-			if ((err as { code: string }).code !== "MODULE_NOT_FOUND") {
-				throw new FormatError(err, `Cannot evaluate environment module '${_config.envModuleFilename}'`);
-			}
-			this.api = {};
-		}
-
+		this.api =
+			this.api ??
+			(await importDynamically<IEnvApi>(resolvePath(this.rootDirPath, _config.envModuleFilename))) ??
+			{};
 		if (!(this.api as TIndexedValue)[identifier]) {
 			return;
 		}

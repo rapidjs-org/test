@@ -7,6 +7,8 @@ import { Env } from "./Env";
 
 import { FormatError } from "./FormatError";
 
+import { importDynamically } from "./util";
+
 import _config from "./config.json";
 
 interface IRecord {
@@ -30,7 +32,7 @@ function traversePath(path: string) {
 
 		importMutex
 			.lock(async () => {
-				await import(filepath);
+				await importDynamically(filepath);
 			})
 			.catch((err: Error) => {
 				throw new FormatError(err, "Cannot evaluate test file");
@@ -89,7 +91,7 @@ export async function init(apiArg: unknown, testTargetPath: string /* , options?
 					const testSuiteModuleReference: string = resolvePath(apiArg);
 					!existsSync(testSuiteModuleReference)
 						? reject(new ReferenceError(`Test suite module not found '${testSuiteModuleReference}'`))
-						: resolve((await import(testSuiteModuleReference)) as TTestApi);
+						: resolve(await importDynamically(testSuiteModuleReference));
 				})
 			: (apiArg as { [key: string]: Test });
 
